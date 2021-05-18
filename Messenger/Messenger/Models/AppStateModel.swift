@@ -58,7 +58,23 @@ extension AppStateModel {
 // SignIn and SignUp
 extension AppStateModel {
     func signIn(username: String, password: String) {
-        // Try to sign in
+        database.collection("users").document(username).getDocument { [weak self] result, error in
+            guard let email = result?.data()?["email"] as? String else {
+                return
+            }
+            
+            self?.auth.signIn(withEmail: email, password: password, completion: { result, error in
+                guard error == nil, result != nil else {
+                    return
+                }
+                
+                DispatchQueue.main.async {
+                    self?.currentUsername = username
+                    self?.currentUserEmail = email
+                    self?.isShowingSignIn = false
+                }
+            })
+        }
     }
     
     func signUp(email: String, username: String, password: String) {
