@@ -13,11 +13,12 @@ class AppStateModel: ObservableObject {
     @AppStorage("currentUsername") var currentUsername = ""
     @AppStorage("currentUserEmail") var currentUserEmail = ""
     @Published var isShowingSignIn: Bool = true
-    @Published var converstations: [String] = []
+    @Published var conversations: [String] = []
     @Published var messages: [Message] = []
     
     var database = Firestore.firestore()
     var auth = FirebaseAuth.Auth.auth()
+    var converstationListener: ListenerRegistration?
     
     var otherUsername = ""
     
@@ -29,14 +30,37 @@ class AppStateModel: ObservableObject {
 // Search
 extension AppStateModel {
     func searchUsers(queryText: String, completion: @escaping ([String]) -> Void) {
-        
+        database.collection("users").getDocuments { result, error in
+            guard let users = result?.documents.compactMap({ $0.documentID }), error == nil else {
+                completion([])
+                return
+            }
+            
+            let filtered = users.filter({
+                $0.lowercased().hasPrefix(queryText.lowercased())
+            })
+            
+            completion(filtered)
+        }
     }
 }
 
 // Conversations
 extension AppStateModel {
     func getConversations() {
-        
+        converstationListener = database
+            .collection("usersname")
+            .document(currentUsername)
+            .collection("chats")
+            .addSnapshotListener {[weak self] result, error in
+                guard let usernames = result?.documents.compactMap({$0.documentID}), error == nil else {
+                    return
+                }
+                
+                DispatchQueue.main.async {
+                    self?.conversations = usernames
+                }
+            }
     }
 }
 

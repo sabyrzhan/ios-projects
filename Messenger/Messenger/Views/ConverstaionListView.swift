@@ -17,13 +17,11 @@ struct ConversationListView: View {
     @State
     var showChat = false
     
-    let username = ["Joe", "Jill", "Bob"]
-    
     var body: some View {
         NavigationView {
             ScrollView(.vertical) {
                 SearchBar(text: $searchText)
-                ForEach(username, id: \.self) { name in
+                ForEach(appState.conversations, id: \.self) { name in
                     NavigationLink(
                         destination: ChatView(otherUsername: name),
                         label: {
@@ -70,6 +68,13 @@ struct ConversationListView: View {
         .fullScreenCover(isPresented: $appState.isShowingSignIn, content: {
             SignInView()
         })
+        .onAppear {
+            guard appState.auth.currentUser != nil else {
+                return
+            }
+            
+            appState.getConversations()
+        }
     }
     
     func signOut() {

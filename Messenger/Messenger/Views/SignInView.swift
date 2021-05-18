@@ -48,6 +48,7 @@ struct SignInView: View {
                 }
                 Spacer()
             }
+            .padding()
         }
         
     }
