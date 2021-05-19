@@ -8,5 +8,6 @@ target 'Messenger' do
   pod 'Firebase/Core'
   pod 'Firebase/Auth'
   pod 'Firebase/Firestore'
+  pod 'FirebaseFirestoreSwift', '~> 8.0.0-beta'
 
 end

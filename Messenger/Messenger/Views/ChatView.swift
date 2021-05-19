@@ -10,31 +10,32 @@ import SwiftUI
 struct ChatView: View {
     @State
     var message: String = ""
+    @EnvironmentObject
+    var appState: AppStateModel
+    
     var otherUsername: String = ""
     
     var body: some View {
-        NavigationView {
-            VStack {
-                ScrollView(.vertical) {
-                    ChatRow(text: "Hello1", messageType: .sent)
-                        .padding(3)
-                    ChatRow(text: "Hello2", messageType: .received)
-                        .padding(3)
-                    ChatRow(text: "Hello3", messageType: .received)
-                        .padding(3)
-                    ChatRow(text: "Hello4", messageType: .received)
-                        .padding(3)
+        VStack {
+            ScrollView(.vertical) {
+                ForEach(appState.messages, id: \.self) { message in
+                    ChatRow(text: message.text, messageType: message.type)
+                        .padding(10)
                 }
-                
-                HStack {
-                    TextField("Message...", text: $message)
-                        .modifier(TextFieldModifier())
-                    SendButton(text: $message)
-                }
-                .padding()
             }
+            
+            HStack {
+                TextField("Message...", text: $message)
+                    .modifier(TextFieldModifier())
+                SendButton(text: $message)
+            }
+            .padding()
         }
-        .navigationTitle(otherUsername)
+        .navigationBarTitle(otherUsername, displayMode: .inline)
+        .onAppear {
+            appState.otherUsername = otherUsername
+            appState.observeChat()
+        }
     }
 }
 

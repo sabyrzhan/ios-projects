@@ -8,6 +8,7 @@
 import SwiftUI
 import FirebaseAuth
 import FirebaseFirestore
+import FirebaseFirestoreSwift
 
 class AppStateModel: ObservableObject {
     @AppStorage("currentUsername") var currentUsername = ""
@@ -19,6 +20,7 @@ class AppStateModel: ObservableObject {
     var database = Firestore.firestore()
     var auth = FirebaseAuth.Auth.auth()
     var converstationListener: ListenerRegistration?
+    var chatListener: ListenerRegistration?
     
     var otherUsername = ""
     
@@ -49,15 +51,21 @@ extension AppStateModel {
 extension AppStateModel {
     func getConversations() {
         converstationListener = database
-            .collection("usersname")
+            .collection("users")
             .document(currentUsername)
             .collection("chats")
             .addSnapshotListener {[weak self] result, error in
-                guard let usernames = result?.documents.compactMap({$0.documentID}), error == nil else {
+                if error != nil {
                     return
                 }
                 
+                let usernames:[String] = result!.documents.compactMap { snapshot in
+                    return snapshot.documentID
+                }
+                
                 DispatchQueue.main.async {
+                    let ss = self!.currentUsername
+                    print("Current username: \(ss) and usernames: \(usernames)")
                     self?.conversations = usernames
                 }
             }
@@ -67,15 +75,75 @@ extension AppStateModel {
 // Get Chat / Send Messages
 extension AppStateModel {
     func observeChat() {
-        
+        chatListener = database
+            .collection("users")
+            .document(currentUsername)
+            .collection("chats")
+            .document(otherUsername)
+            .collection("messages")
+            .addSnapshotListener {[weak self] result, error in
+                guard let m = result?.documents else {
+                    return
+                }
+                
+                let messages:[Message] = m.compactMap { snapshot in
+                    do {
+                        return try snapshot.data(as: Message.self)
+                    } catch {
+                        print(error)
+                    }
+                    return nil
+                }.sorted(by: { first, second in
+                    return first.created < second.created
+                })
+                
+                DispatchQueue.main.async {
+                    self?.messages = messages
+                }
+            }
     }
     
     func sendMessage(text: String) {
-        
-    }
-    
-    func createConversationIfNeeded() {
-        
+        do {
+            let messageId = UUID().uuidString
+            let date = Date()
+            let dataSent = Message(text: text, type: .sent, created: date)
+            let dataReceived = Message(text: text, type: .received, created: date)
+            
+            database
+                .collection("users")
+                .document(currentUsername)
+                .collection("chats")
+                .document(otherUsername)
+                .setData([:])
+                        
+            try database
+                .collection("users")
+                .document(currentUsername)
+                .collection("chats")
+                .document(otherUsername)
+                .collection("messages")
+                .document(messageId)
+                .setData(from: dataSent, merge: true)
+            
+            database
+                .collection("users")
+                .document(otherUsername)
+                .collection("chats")
+                .document(currentUsername)
+                .setData([:])
+            
+            try database
+                .collection("users")
+                .document(otherUsername)
+                .collection("chats")
+                .document(currentUsername)
+                .collection("messages")
+                .document(messageId)
+                .setData(from: dataReceived, merge: true)
+        } catch {
+            print(error)
+        }
     }
 }
 

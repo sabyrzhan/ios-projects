@@ -7,13 +7,13 @@
 
 import Foundation
 
-enum MessageType: String {
+enum MessageType: String, Codable {
     case sent
     case received
 }
 
-struct Message {
-    let text: String
-    let type: MessageType
-    let created: String
+struct Message: Hashable, Codable {
+    var text: String
+    var type: MessageType
+    var created: Date
 }
