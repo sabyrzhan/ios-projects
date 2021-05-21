@@ -26,9 +26,12 @@ struct ChatRow: View {
             if !isSender {
                 VStack {
                     Spacer()
-                    Circle()
-                        .frame(width: 45, height: 45)
+                    Image("photo1")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 45, height: 45, alignment: .center)
                         .foregroundColor(.pink)
+                        .clipShape(Circle())
                 }
             }
             HStack {

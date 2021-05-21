@@ -5,15 +5,28 @@
 //  Created by Sabyrzhan Tynybayev on 17.05.2021.
 //
 
+import Combine
 import SwiftUI
 
 struct SearchBar: View {
-    @Binding var text: String
+    @State var text: String = ""
     @State private var isEditing = false
+    
+    var completion: ((String) -> Void)
+    
+    init(completion: @escaping ((String) -> Void)) {
+        self.completion = completion
+    }
  
     var body: some View {
+        let textBinding = Binding<String>(get: {
+            self.text
+        }, set: {
+            self.text = $0
+            completion($0)
+        })
         HStack {
-            TextField("Search ...", text: $text)
+            TextField("Search ...", text: textBinding)
                 .padding(7)
                 .padding(.horizontal, 25)
                 .overlay(
@@ -26,6 +39,7 @@ struct SearchBar: View {
                         if isEditing {
                             Button(action: {
                                 self.text = ""
+                                completion(self.text)
                             }) {
                                 Image(systemName: "multiply.circle.fill")
                                     .foregroundColor(.gray)
@@ -45,6 +59,7 @@ struct SearchBar: View {
                 Button(action: {
                     self.isEditing = false
                     self.text = ""
+                    completion(self.text)
                     #if canImport(UIKit)
                     UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                     #endif
@@ -61,6 +76,8 @@ struct SearchBar: View {
 
 struct SearchBar_Previews: PreviewProvider {
     static var previews: some View {
-        SearchBar(text: .constant("Sample text"))
+        SearchBar { text in
+            
+        }
     }
 }

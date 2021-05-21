@@ -11,8 +11,6 @@ struct ConversationListView: View {
     @EnvironmentObject
     var appState: AppStateModel
     @State
-    var searchText = ""
-    @State
     var otherUsername = ""
     @State
     var showChat = false
@@ -20,15 +18,33 @@ struct ConversationListView: View {
     var body: some View {
         NavigationView {
             ScrollView(.vertical) {
-                SearchBar(text: $searchText)
+                SearchBar { text in
+                    guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                        appState.getConversations()
+                        return
+                    }
+                    
+                    print(text)
+
+                    let filteredList = appState.conversations.filter {name in
+                        return name.lowercased().hasPrefix(text.lowercased())
+                    }
+
+                    print(filteredList)
+
+                    appState.conversations = filteredList
+                }
                 ForEach(appState.conversations, id: \.self) { name in
                     NavigationLink(
                         destination: ChatView(otherUsername: name),
                         label: {
                             HStack {
-                                Circle()
+                                Image("photo1")
+                                    .resizable()
+                                    .scaledToFit()
                                     .frame(width: 65, height: 65, alignment: .center)
                                     .foregroundColor(.pink)
+                                    .clipShape(Circle())
                                 Text(name)
                                     .bold()
                                     .foregroundColor(Color(.label))
